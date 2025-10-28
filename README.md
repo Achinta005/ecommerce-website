@@ -1,36 +1,173 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛍️ Online Ecommerce Platform
 
-## Getting Started
+An **e-commerce product catalog** built with **Next.js**, demonstrating multiple rendering strategies — **SSG**, **ISR**, **SSR**, and **CSR** — along with a **MongoDB database** for product management.  
+Users can browse products, view details, and administrators can manage inventory.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Features
+
+- Browse products on the **Home Page** (Static Generation)
+- View product details with **Incremental Static Regeneration (ISR)**
+- Real-time **Inventory Dashboard** using **Server-Side Rendering (SSR)**
+- Fully interactive **Admin Panel** using **Client-Side Rendering (CSR)**
+- MongoDB integration with Mongoose for product management
+- Auto-updating `lastUpdated` timestamps for product modifications
+
+---
+
+## ⚙️ Tech Stack
+
+- **Framework:** Next.js (App Router)
+- **Database:** MongoDB (via Mongoose)
+- **Language:** TypeScript / JavaScript (ESNext)
+- **Styling:** Tailwind CSS or any preferred UI library
+- **Icons:** Lucide React
+
+---
+
+## 🧩 Project Structure
+
+```
+/app
+ ├── page.tsx                → Home Page (SSG)
+ ├── products/[slug]/page.tsx → Product Detail Page (ISR)
+ ├── dashboard/page.tsx      → Inventory Dashboard (SSR)
+ ├── admin/page.tsx          → Admin Panel (CSR)
+ /lib
+ ├── dbConnect.ts            → MongoDB connection
+ /models
+ ├── Product.js              → Mongoose schema with auto-updated lastUpdated field
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🧠 Rendering Strategies Used
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Page | Route | Rendering Strategy | Reason |
+|------|--------|--------------------|---------|
+| **Home Page** | `/` | **SSG (Static Site Generation)** | Pre-generates product listings at build time for faster performance and caching. |
+| **Product Detail** | `/products/[slug]` | **ISR (Incremental Static Regeneration)** | Combines static speed with periodic revalidation (e.g., every 60 seconds) for semi-dynamic data like price or stock. |
+| **Inventory Dashboard** | `/dashboard` | **SSR (Server-Side Rendering)** | Fetches live inventory on every request, ensuring always up-to-date statistics. |
+| **Admin Panel** | `/admin` | **CSR (Client-Side Rendering)** | Fetches and updates data dynamically from the API, supporting interactive form submissions. |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🗄️ Database Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. Install MongoDB (Local or Atlas)
+You can either:
+- Use **MongoDB Atlas** (recommended for cloud access), or  
+- Run MongoDB locally.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Create a `.env.local` file in your project root:
+```bash
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/ecommerceDB
+```
 
-## Deploy on Vercel
+### 3. Connect to MongoDB
+Your `lib/dbConnect.js` should look like:
+```js
+import mongoose from "mongoose";
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+const MONGODB_URI = process.env.MONGODB_URI;
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+if (!MONGODB_URI) throw new Error("Please define MONGODB_URI in .env.local");
+
+let cached = global.mongoose || { conn: null, promise: null };
+
+export default async function dbConnect() {
+  if (cached.conn) return cached.conn;
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false }).then(m => m);
+  }
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+```
+
+---
+
+## 🧰 Installation & Running
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/yourusername/product-catalog.git
+cd product-catalog
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Set up environment variables
+Create a `.env.local` file and add your MongoDB connection string as shown above.
+
+### 4. Run the development server
+```bash
+npm run dev
+```
+
+Open **http://localhost:3000** in your browser.
+
+---
+
+## 🧾 Product Schema Overview
+
+```js
+const ProductSchema = new Schema({
+  id: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  slug: { type: String, required: true },
+  description: String,
+  price: { type: Number, required: true },
+  category: { type: String, required: true },
+  inventory: { type: Number, required: true },
+  images: { type: [String], default: [] },
+  lastUpdated: { type: Date, default: Date.now },
+});
+```
+
+Includes a middleware to **auto-update `lastUpdated`** on every modification.
+
+---
+
+## 🧑‍💻 Admin Functionality
+
+The `/admin` page allows:
+- Adding new products
+- Editing or deleting existing products
+- Updating stock and details
+- All operations handled through API routes (client-side fetch)
+
+---
+
+## 📈 Dashboard Functionality
+
+The `/dashboard` route shows:
+- Total products
+- Low-stock products
+- Real-time inventory data fetched directly from MongoDB using SSR
+
+---
+
+## 📦 Build for Production
+
+```bash
+npm run build
+npm start
+```
+
+---
+
+## 🧹 Optional Commands
+
+```bash
+# Lint code
+npm run lint
+
+# Format with Prettier
+npm run format
+```
+
